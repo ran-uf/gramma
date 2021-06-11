@@ -12,7 +12,7 @@ def print_hi(name):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    x, y = generate_tomita4(40, 10)
+    x, y = generate_tomita4(100, 10)
     # train_x = []
     # train_y = []
     # for i in range(0, x.shape[0], 2):
@@ -23,14 +23,28 @@ if __name__ == '__main__':
 
     model = KAARMA(5, 1, 2, 2, np.array([x[0, 0]]))
 
-    for i in range(100):
-        model.train_3(x, y, .1, 0.001)
+    x_train = []
+    y_train = []
+    for i in [6, 7, 8, 9, 10]:
+        x, y = generate_tomita4(20, i)
+        for xx, yy in zip(x, y):
+            x_train.append(xx)
+            y_train.append(yy)
+    x_train = np.array(x_train, dtype='object')
+    y_train = np.array(y_train, dtype='object')
 
-        loss = []
-        res = []
-        for (xxx, yyy) in zip(x, y[:, 0]):
-            l, r = model.test_one_sampe(xxx, yyy)
-            loss.append(l)
-            res.append(r)
-        print(np.mean(loss), np.mean(res))
+    ls_loss = []
+    ls_acc = []
+    for i in range(100):
+        # model.train_1(x_train, y_train, .05, 0.01)
+        loss, acc = model.train_1(x_train, y_train, .1, 0.5)
+        ls_loss.append(loss)
+        ls_acc.append(acc)
+        # loss = []
+        # res = []
+        # for (xxx, yyy) in zip(x, y[:, 0]):
+        #     l, r = model.test_one_sampe(xxx, yyy)
+        #     loss.append(l)
+        #     res.append(r)
+        # print(np.mean(loss), np.mean(res))
 

@@ -78,6 +78,48 @@ class RNN(object):
         dj_dw1 *= 0
         dj_dw2 *= 0
 
+    def train_step_window(self, x, y, lr):
+        length = x.shape[0]
+        window_size = 5
+        y1 = np.zeros((length + 1, self.dim_hidden))
+
+        # e = np.zeros_like(y, dtype=np.float64)
+        # dj_dy2 = np.zeros_like(y, dtype=np.float64)
+        for i in range(length):
+            y1[i + 1, :] = self.acivate(np.dot(x[i], self.w0) + np.dot(y1[i, :], self.w1))
+        y2 = self.acivate(self.w2.T @ y1[-1, :])
+        e = y - y2
+
+        dj_dy2 = -e * y2 * (1 - y2)
+        # print(abs(e))
+        dj_dw0 = np.zeros_like(self.w0)
+        dj_dw1 = np.zeros_like(self.w1)
+        dj_dw2 = np.zeros_like(self.w2)
+
+        # dj_dw1 = np.zeros((self.dim_hidden, self.dim_hidden))
+        delta_future_y1 = np.zeros(self.dim_hidden)
+
+        for i in range(length, 0, -1):
+            if i == length:
+                delta_y1 = np.atleast_2d(dj_dy2).dot(self.w2.T) * y1[i, :] * (1 - y1[i, :])
+            else:
+                delta_y1 = (delta_future_y1.dot(self.w1.T)) * y1[i, :] * (1 - y1[i, :])
+
+            dj_dw0 += np.atleast_2d(x[i - 1]).T.dot(delta_y1)
+            dj_dw1 += np.atleast_2d(y1[i - 1, :]).T.dot(delta_y1)
+
+            delta_future_y1 = delta_y1
+
+        dj_dw2 += np.atleast_2d(y1[-1, :]).T.dot(np.atleast_2d(dj_dy2))
+
+        self.w0 = self.w0 - lr * dj_dw0
+        self.w1 = self.w1 - lr * dj_dw1
+        self.w2 = self.w2 - lr * dj_dw2
+
+        dj_dw0 *= 0
+        dj_dw1 *= 0
+        dj_dw2 *= 0
+
     def train(self, x, y, lr):
         for (xx, yy) in zip(x, y):
             self.train_step(xx, yy[0], lr)
